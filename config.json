@@ -1,0 +1,7 @@
+{
+  "market": "NSE",
+  "default_timeframe": "15m",
+  "risk_per_trade_pct": 1.5,
+  "target_pct": 3.0,
+  "max_drawdown_limit": 2.0
+}
