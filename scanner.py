@@ -1,26 +1,46 @@
+import yfinance as yf
+import pandas as pd
+
 class StockScanner:
     @staticmethod
     def get_top_stocks(bias):
-        # Stage 2: Top 5 F&O Stocks Screening
-        if bias == "BULLISH":
-            return [
-                {"stock": "RELIANCE", "oi_status": "Long Buildup", "day_high": 2520.0, "day_low": 2480.0},
-                {"stock": "TCS", "oi_status": "Short Covering", "day_high": 3220.0, "day_low": 3170.0},
-                {"stock": "INFY", "oi_status": "Long Buildup", "day_high": 1460.0, "day_low": 1435.0},
-                {"stock": "ICICIBANK", "oi_status": "Long Buildup", "day_high": 1100.0, "day_low": 1080.0},
-                {"stock": "SBIN", "oi_status": "Long Buildup", "day_high": 820.0, "day_low": 805.0}
-            ]
-        return []
+        # Top NSE F&O stocks symbols for live tracking
+        symbols = ["RELIANCE.NS", "TCS.NS", "INFY.NS", "ICICIBANK.NS", "SBIN.NS"]
+        live_data = []
+        
+        for symbol in symbols:
+            try:
+                ticker = yf.Ticker(symbol)
+                df = ticker.history(period="1d", interval="15m")
+                if not df.empty:
+                    high = df['High'].max()
+                    low = df['Low'].min()
+                    close = df['Close'].iloc[-1]
+                    name = symbol.replace(".NS", "")
+                    live_data.append({
+                        "stock": name,
+                        "oi_status": "Live Tracking",
+                        "day_high": round(high, 2),
+                        "day_low": round(low, 2),
+                        "current_price": round(close, 2)
+                    })
+            except Exception:
+                continue
+        return live_data
 
     @staticmethod
     def check_breakouts(top_stocks):
-        # Stage 3: High/Low Breakout Confirmation
         breakout_results = []
         for item in top_stocks:
+            curr = item.get("current_price", 0)
+            high = item.get("day_high", 0)
+            
+            # Agar current price day high ke paas ya cross kar raha hai
+            b_type = "HIGH BREAKOUT 🚀" if curr >= (high * 0.995) else "Consolidating ⏳"
             breakout_results.append({
                 "stock": item["stock"],
-                "breakout_type": "HIGH BREAKOUT 🚀",
-                "trigger_price": item["day_high"] + 2.0,
-                "status": "Confirmed"
+                "breakout_type": b_type,
+                "trigger_price": high,
+                "status": "Active Live"
             })
         return breakout_results
