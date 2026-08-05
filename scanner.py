@@ -1,46 +1,33 @@
-import yfinance as yf
-import pandas as pd
+import time
+import json
+import os
 
-class StockScanner:
-    @staticmethod
-    def get_top_stocks(bias):
-        # Top NSE F&O stocks symbols for live tracking
-        symbols = ["RELIANCE.NS", "TCS.NS", "INFY.NS", "ICICIBANK.NS", "SBIN.NS"]
-        live_data = []
-        
-        for symbol in symbols:
-            try:
-                ticker = yf.Ticker(symbol)
-                df = ticker.history(period="1d", interval="15m")
-                if not df.empty:
-                    high = df['High'].max()
-                    low = df['Low'].min()
-                    close = df['Close'].iloc[-1]
-                    name = symbol.replace(".NS", "")
-                    live_data.append({
-                        "stock": name,
-                        "oi_status": "Live Tracking",
-                        "day_high": round(high, 2),
-                        "day_low": round(low, 2),
-                        "current_price": round(close, 2)
-                    })
-            except Exception:
-                continue
-        return live_data
+def load_config():
+    if os.path.exists("config.json"):
+        with open("config.json", "r") as f:
+            return json.load(f)
+    return {"auto_scan_interval_minutes": 15, "max_stocks": 5}
 
-    @staticmethod
-    def check_breakouts(top_stocks):
-        breakout_results = []
-        for item in top_stocks:
-            curr = item.get("current_price", 0)
-            high = item.get("day_high", 0)
+def run_scanner():
+    print("Market Scanner Started...")
+    # Aapka actual scanning logic yahan aayega
+    # Jaise: fetch market data, apply 315 strategy indicators, sort and save top results.
+    
+    # Example saving to CSV for dashboard
+    # top_stocks.head(config["max_stocks"]).to_csv("signals.csv", index=False)
+    pass
+
+if __name__ == "__main__":
+    config = load_config()
+    interval_seconds = config.get("auto_scan_interval_minutes", 15) * 60
+    
+    print(f"Auto-scan initialized. Interval: {config.get('auto_scan_interval_minutes', 15)} minutes.")
+    
+    while True:
+        try:
+            run_scanner()
+            print(f"Scan completed. Waiting for {config.get('auto_scan_interval_minutes', 15)} minutes...")
+        except Exception as e:
+            print(f"Error during scanning: {e}")
             
-            # Agar current price day high ke paas ya cross kar raha hai
-            b_type = "HIGH BREAKOUT 🚀" if curr >= (high * 0.995) else "Consolidating ⏳"
-            breakout_results.append({
-                "stock": item["stock"],
-                "breakout_type": b_type,
-                "trigger_price": high,
-                "status": "Active Live"
-            })
-        return breakout_results
+        time.sleep(interval_seconds)
