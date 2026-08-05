@@ -1,55 +1,55 @@
 import streamlit as st
 import pandas as pd
-from market import MarketOverview
-from scanner import StockScanner
-from risk_manager import RiskManager
-from strategy import StrategyAnalytics
+import json
+import os
 
-def render_dashboard():
-    st.set_page_config(page_title="Master Sequential Trading System", layout="wide")
-    st.title("🚀 Master 5-Stage Heikin-Ashi Execution Dashboard")
-    st.markdown("---")
+# Load configuration
+config_path = "config.json"
+if os.path.exists(config_path):
+    with open(config_path, "r") as f:
+        config = json.load(f)
+else:
+    config = {"max_stocks": 5}
+
+max_stocks = config.get("max_stocks", 5)
+
+st.set_page_config(page_title="NSE 315 Strategy Dashboard", layout="wide")
+
+st.title("📊 NSE 315 Strategy - Top Stocks Dashboard")
+
+# Auto-refresh mechanism for auto-scan view in Streamlit
+try:
+    from streamlit_autorefresh import st_autorefresh
+    # Refresh every 15 minutes (900000 milliseconds)
+    st_autorefresh(interval=900000, key="datarefresh")
+except ImportError:
+    pass
+
+st.sidebar.header("Scanner Settings")
+st.sidebar.info(f"Displaying Top {max_stocks} Stocks Automatically.")
+
+# Sample/Live Data Loading logic (Replace with your database/csv fetching logic)
+def load_data():
+    # Yahan aapki database ya CSV se data fetch karne wali logic aayegi
+    # Example ke tor par dummy ya actual dataframe return karein
+    if os.path.exists("signals.csv"):
+        df = pd.read_csv("signals.csv")
+    else:
+        # Dummy fallback data if file doesn't exist yet
+        df = pd.DataFrame(columns=["Symbol", "Score", "Signal", "Price"])
+    return df
+
+df = load_data()
+
+st.subheader(f"Top {max_stocks} Scanned Stocks")
+
+if not df.empty:
+    # Strictly limit to top N stocks defined in config
+    top_df = df.head(max_stocks)
     
-    col_label, col_val = st.columns([2, 8])
-    with col_label:
-        st.markdown("### 1️⃣ Market Overview:")
-    with col_val:
-        market_data = MarketOverview.get_market_bias()
-        bias = market_data["market_bias"]
-        if bias == "BULLISH":
-            st.success(f"**{bias}**")
-        else:
-            st.warning(f"**{bias}**")
-        
-    st.markdown("---")
-    
-    st.header("2️⃣ Top 5 F&O Stocks Shortlisted (Stage 2)")
-    top_stocks_data = StockScanner.get_top_stocks(bias)
-    st.dataframe(pd.DataFrame(top_stocks_data), use_container_width=True)
-    
-    st.markdown("---")
-    
-    st.header("3️⃣ High/Low Breakout Confirmation (Stage 3)")
-    breakouts_data = StockScanner.check_breakouts(top_stocks_data)
-    st.dataframe(pd.DataFrame(breakouts_data), use_container_width=True)
-    
-    st.markdown("---")
-    
-    st.header("4️⃣ Trade Execution: Entry Price & Stop-Loss (Stage 4)")
-    trades_data = RiskManager.calculate_trade_levels(breakouts_data)
-    st.dataframe(pd.DataFrame(trades_data), use_container_width=True)
-    
-    st.markdown("---")
-    
-    st.header("5️⃣ Strategy Backtest Results & Analytics (Stage 5)")
-    backtest = StrategyAnalytics.get_backtest_results()
-    
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.metric(label="Backtest Win Rate", value=backtest["win_rate"])
-    with c2:
-        st.metric(label="Profit Factor", value=backtest["profit_factor"])
-    with c3:
-        st.metric(label="Max Drawdown", value=backtest["max_drawdown"])
-    with c4:
-        st.metric(label="System Status", value=backtest["status"])
+    st.dataframe(top_df, use_container_width=True)
+else:
+    st.warning("No stock data found. Please run the scanner.")
+
+if st.button("Run Manual Scan Now"):
+    st.success("Scan triggered successfully!")
